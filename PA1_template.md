@@ -1,17 +1,14 @@
----
-title: "Reproducible Research: Peer Assessment 1"
-output: 
-  html_document:
-    keep_md: true
----
+# Reproducible Research: Peer Assessment 1
 
 
 ## Loading and preprocessing the data
-```{r, message=FALSE,results='hide'}
+
+```r
 library(dplyr)
 library(ggplot2)
 ```
-```{r}
+
+```r
 unzip("activity.zip")
 act <- read.csv("activity.csv")
 steps.all <- summarize(group_by(act,date),
@@ -34,32 +31,49 @@ steps.by.interval <- summarize(group_by(act,interval),
                   )
 steps.by.interval <- filter(steps.by.interval, count>0)
 ```
-The data set has no data at all for `r all.missing` of the `r all.days` days. Data preparation includes summarizing by date, then removing days with no data. The histogram of steps per day gives an overview of the individual's monitored activity.
-```{r}
+The data set has no data at all for 8 of the 61 days. Data preparation includes summarizing by date, then removing days with no data. The histogram of steps per day gives an overview of the individual's monitored activity.
+
+```r
 hist(steps$total,xlab="Total steps in a day",main="")
 ```
 
+![](PA1_template_files/figure-html/unnamed-chunk-3-1.png) 
+
 ## What is mean total number of steps taken per day?
 The five-number summary below includes the mean and median steps per day.
-```{r}
+
+```r
 summary(steps$total)
 ```
 
+```
+##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+##      41    8841   10760   10770   13290   21190
+```
+
 ## What is the average daily activity pattern?
-```{r}
+
+```r
 qplot(x=steps.by.interval$interval,y=steps.by.interval$mean,geom="line",ylab="mean steps across all days",xlab="interval","Daily activity pattern")
+```
+
+![](PA1_template_files/figure-html/unnamed-chunk-5-1.png) 
+
+```r
 peak <- steps.by.interval[which(steps.by.interval$mean==max(steps.by.interval$mean)),]
 ```
-The individual's peak activity, by average steps across all days in the study, occurred at `r sprintf("%02d:%02d",round(peak$interval/100),peak$interval%%100)`. Averaged across the days of the study, `r prettyNum(round(peak$mean),big.mark=",")` steps were recorded in that interval.
+The individual's peak activity, by average steps across all days in the study, occurred at 08:35. Averaged across the days of the study, 206 steps were recorded in that interval.
 
 ## Imputing missing values
-```{r}
+
+```r
 missing.steps = sum(is.na(act$steps))
 missing.total = sum(is.na(act))
 percent.missing.in.steps = round(100*missing.steps/missing.total)
 ```
-The input dataset has a total of `r prettyNum(missing.total,big.mark=",")` NA values, `r percent.missing.in.steps`% of which occur in the steps column. Since there are some days with no data, we will estimate a replacement for an NA value by using the individual's mean activity in that interval over the entire study period.
-```{r}
+The input dataset has a total of 2,304 NA values, 100% of which occur in the steps column. Since there are some days with no data, we will estimate a replacement for an NA value by using the individual's mean activity in that interval over the entire study period.
+
+```r
 # use the overall mean to impute steps
 impute <- function(i) {
     mean(act[act$interval==i,]$steps,na.rm=TRUE)
@@ -87,7 +101,8 @@ steps.imputed <- summarize(
 )
 ```
 This histogram of total steps in a day, after imputing values to the NAs, closely resembles the original histogram that was created by dropping NA values.
-```{r}
+
+```r
 hist(
     steps.imputed$total,
     xlab="Total steps in a day\n(missing values imputed using interval mean)",
@@ -95,13 +110,22 @@ hist(
 )
 ```
 
+![](PA1_template_files/figure-html/unnamed-chunk-8-1.png) 
+
 The five-number summary below includes the mean and median steps per day, after imputing the NA values. Compared to the values before imputing missing values, the mean has not changed, and the median has changed very slightly.
-```{r}
+
+```r
 summary(steps.imputed$total)
+```
+
+```
+##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+##      41    9819   10770   10770   12810   21190
 ```
 ## Are there differences in activity patterns between weekdays and weekends?
 Based on the dataset with interval means used in place of the original NA values, this panel plot is intended to help with comparing the individual's activity pattern on weekends vs weekdays.
-```{r}
+
+```r
 act.imputed <- cbind(
     act.imputed,
     ifelse(weekdays(as.Date(act.imputed$date)) %in% c("Saturday","Sunday"),"weekend", "weekday")
@@ -118,5 +142,7 @@ p <- ggplot(steps.imp.int,aes(interval,mean)) + geom_line() + facet_grid(weekpar
     ylab("mean steps across all days") + ggtitle("Daily activity pattern\n")
 print(p)
 ```
+
+![](PA1_template_files/figure-html/unnamed-chunk-10-1.png) 
 
 On weekends, the individual's activity shifts later in the day. The sharp increase in steps that occurs around 5:30am is not present on the weekend. The daily activity peak is still around 8:30am on weekends, but it is only slightly more than at later times of the day. By contrast, the 8:30 peak on weekdays has roughly twice as many steps as the afternoon and evening peaks.
